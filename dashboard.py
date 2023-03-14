@@ -1,56 +1,29 @@
+# streamlit_app.py
+
 import streamlit as st
-import pandas as pd
-import plotly.express as px
+from google.oauth2 import service_account
+from gsheetsdb import connect
 
-@st.cache
-def load_data(file_path):
-    return pd.read_csv(file_path)
+# Create a connection object.
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=[
+        "https://www.googleapis.com/auth/spreadsheets",
+    ],
+)
+conn = connect(credentials=credentials)
 
-def main():
-    st.title("Personal Health Dashboard")
+# Perform SQL query on the Google Sheet.
+# Uses st.cache_data to only rerun when the query changes or after 10 min.
+@st.cache_data(ttl=600)
+def run_query(query):
+    rows = conn.execute(query, headers=1)
+    rows = rows.fetchall()
+    return rows
 
-    file_path = st.file_uploader("Upload your personal data CSV file", type=["csv"])
-    if file_path is not None:
-        df = load_data(file_path)
-        st.dataframe(df)
+sheet_url = st.secrets["private_gsheets_url"]
+rows = run_query(f'SELECT * FROM "{sheet_url}"')
 
-        # Choose the header to plot
-        selected_header = st.selectbox("Select a header to plot over time", df.columns)
-
-        # Plotting the selected header over time using Plotly
-        fig = px.line(df, x='Time of Measurement', y=selected_header)
-        st.plotly_chart(fig)
-
-        # Showing some statistics
-        st.write("### Personal Data Statistics")
-        st.write("Mean value: ", df[selected_header].mean())
-        st.write("Minimum value: ", df[selected_header].min())
-        st.write("Maximum value: ", df[selected_header].max())
-
-    google_fit_path = st.file_uploader("Upload your Google Fit data CSV file", type=["csv"])
-    if google_fit_path is not None:
-        df_google_fit = load_data(google_fit_path)
-        st.dataframe(df_google_fit)
-
-        # Choose the header to plot
-        selected_header_google_fit = st.selectbox("Select a header to plot over time", df_google_fit.columns)
-
-        # Plotting the selected header over time using Plotly
-        fig_google_fit = px.line(df_google_fit, x='Time of Measurement', y=selected_header_google_fit)
-        st.plotly_chart(fig_google_fit)
-
-        # Showing some statistics
-        st.write("### Google Fit Data Statistics")
-        st.write("Mean value: ", df_google_fit[selected_header_google_fit].mean())
-        st.write("Minimum value: ", df_google_fit[selected_header_google_fit].min())
-        st.write("Maximum value: ", df_google_fit[selected_header_google_fit].max())
-
-        # 7-day moving average of heart points
-        df_google_fit['7-day avg heart points'] = df_google_fit['Heart Points'].rolling(window=7).mean()
-        fig_7day_avg = px.line(df_google_fit, x='Time of Measurement', y='7-day avg heart points')
-        st.plotly_chart(fig_7day_avg)
-
-        # Count of days with more than 10,000 steps
-        df_google_fit['over_10000'] = df_google_fit['Steps'] >= 10000
-        fig_steps = px.bar(df_google_fit, x='Time of Measurement', y='over_10000', color='over_10000')
-       
+# Print results.
+for row in rows:
+    st.write(f"{row.name} has a :{row.pet}:")
