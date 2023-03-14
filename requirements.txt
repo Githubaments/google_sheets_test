@@ -4,3 +4,4 @@ plotly_express
 pandas
 numpy
 gsheetsdb
+pyparsing
