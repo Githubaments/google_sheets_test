@@ -5,3 +5,4 @@ pandas
 numpy
 gsheetsdb
 pyparsing
+google.oauth2
