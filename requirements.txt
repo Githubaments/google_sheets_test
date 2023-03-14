@@ -4,5 +4,3 @@ plotly_express
 pandas
 numpy
 gsheetsdb
-pyparsing
-google.oauth2
