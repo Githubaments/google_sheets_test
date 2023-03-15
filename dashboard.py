@@ -5,7 +5,7 @@ from gsheetsdb import connect
 conn = connect()
 
 # Query the specific sheet by name
-query = "SELECT * FROM 'Form responses 2$'"
+query = "SELECT * FROM `Form responses 2$`"
 
 # Execute the query and read the results into a pandas dataframe
 df = conn.execute(query).fetch_data()
