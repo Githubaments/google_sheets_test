@@ -2,3 +2,4 @@ streamlit
 plotly_express
 pandas
 gsheetsdb
+pyparsing
